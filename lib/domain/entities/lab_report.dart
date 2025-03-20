@@ -7,7 +7,7 @@ class LabReport extends Equatable {
   final Patient patient;
   final DateTime labResultDate;
   final List<TestResult> testResults;
-  final String? laboratoryTest; 
+  final String? laboratoryTest; // Add this property
 
   const LabReport({
     required this.id,

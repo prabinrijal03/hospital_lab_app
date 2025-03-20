@@ -1,10 +1,64 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hospital_lab_app/core/extensions/theme_extension.dart';
+import 'package:hospital_lab_app/data/repositories/lab_repository_impl.dart';
 import 'package:hospital_lab_app/presentation/widgets/responsive_container.dart';
-import 'package:hospital_lab_app/presentation/widgets/app_drawer.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class RoleSelectionPage extends StatelessWidget {
+class RoleSelectionPage extends StatefulWidget {
   const RoleSelectionPage({super.key});
+
+  @override
+  State<RoleSelectionPage> createState() => _RoleSelectionPageState();
+}
+
+class _RoleSelectionPageState extends State<RoleSelectionPage> {
+  late LabRepositoryImpl _repository;
+  int _totalRequisitions = 0;
+  int _completedReports = 0;
+  int _pendingReports = 0;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initRepository();
+  }
+
+  Future<void> _initRepository() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Get SharedPreferences directly
+    final sharedPreferences = await SharedPreferences.getInstance();
+    
+    // Create repository directly
+    _repository = LabRepositoryImpl(sharedPreferences: sharedPreferences);
+    
+    _loadStats();
+  }
+
+  void _loadStats() {
+    final requisitions = _repository.getRequisitions();
+    int completed = 0;
+    int pending = 0;
+
+    for (var req in requisitions) {
+      if (_repository.hasLabReport(req.id)) {
+        completed++;
+      } else {
+        pending++;
+      }
+    }
+
+    setState(() {
+      _totalRequisitions = requisitions.length;
+      _completedReports = completed;
+      _pendingReports = pending;
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,79 +67,221 @@ class RoleSelectionPage extends StatelessWidget {
         title: const Text('Hospital Lab App'),
         centerTitle: true,
       ),
-      drawer: const AppDrawer(currentRoute: '/'),
       body: ResponsiveContainer(
-        child: Center(
+        child: SingleChildScrollView(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Select your role',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+              SizedBox(height: context.spacingLarge),
+              _buildHeader(),
+              SizedBox(height: context.spacingXLarge),
+              _buildStatistics(),
+              SizedBox(height: context.spacingXLarge),
+              _buildRoleSelection(),
+              SizedBox(height: context.spacingXLarge),
+              _buildWorkflowSection(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: EdgeInsets.all(context.spacingLarge),
+      decoration: BoxDecoration(
+        color: context.primaryColor,
+        borderRadius: context.borderRadiusXLarge,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.local_hospital,
+                color: Colors.white,
+                size: 40,
               ),
-              const SizedBox(height: 40),
-              ElevatedButton.icon(
-                onPressed: () => context.go('/doctor'),
-                icon: const Icon(Icons.medical_services),
-                label: const Text('Doctor'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: () => context.go('/lab'),
-                icon: const Icon(Icons.science),
-                label: const Text('Lab Technician'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 40),
-              const Text(
-                'Complete Workflow:',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                ),
+              SizedBox(width: context.spacingMedium),
+              Expanded(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildWorkflowStep(
-                      '1',
-                      'Doctor creates lab requisition',
-                      Icons.medical_services,
+                    Text(
+                      'Hospital Laboratory',
+                      style: context.headingLarge.copyWith(color: Colors.white),
                     ),
-                    const SizedBox(height: 8),
-                    _buildWorkflowStep(
-                      '2',
-                      'Lab technician enters test results',
-                      Icons.science,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildWorkflowStep(
-                      '3',
-                      'Doctor views completed lab report',
-                      Icons.description,
+                    Text(
+                      'Manage lab requisitions and reports',
+                      style: context.bodyMedium.copyWith(color: Colors.white.withOpacity(0.9)),
                     ),
                   ],
                 ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatistics() {
+    return _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(left: context.spacingMedium, bottom: context.spacingSmall),
+                child: Text(
+                  'Dashboard',
+                  style: context.headingMedium,
+                ),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      'Total Requisitions',
+                      _totalRequisitions.toString(),
+                      Icons.description,
+                      context.infoColor,
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildStatCard(
+                      'Completed Reports',
+                      _completedReports.toString(),
+                      Icons.check_circle,
+                      context.successColor,
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildStatCard(
+                      'Pending Reports',
+                      _pendingReports.toString(),
+                      Icons.hourglass_empty,
+                      context.warningColor,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+    return Card(
+      margin: EdgeInsets.all(context.spacingSmall),
+      child: Padding(
+        padding: EdgeInsets.all(context.spacingMedium),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 32),
+            SizedBox(height: context.spacingSmall),
+            Text(
+              value,
+              style: context.headingLarge.copyWith(color: color),
+            ),
+            SizedBox(height: context.spacingXSmall),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: context.bodySmall.copyWith(color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoleSelection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(left: context.spacingMedium, bottom: context.spacingMedium),
+          child: Text(
+            'Select your role',
+            style: context.headingMedium,
+          ),
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: _buildRoleCard(
+                'Doctor',
+                'Create requisitions and view lab reports',
+                Icons.medical_services,
+                context.infoColor,
+                () => context.go('/doctor'),
+              ),
+            ),
+            Expanded(
+              child: _buildRoleCard(
+                'Lab Technician',
+                'Process requisitions and submit test results',
+                Icons.science,
+                context.successColor,
+                () => context.go('/lab'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRoleCard(
+    String title,
+    String description,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return Card(
+      margin: EdgeInsets.all(context.spacingSmall),
+      child: InkWell(
+        onTap: () {
+          if (title == 'Doctor') {
+            _showDoctorOptionsDialog(context);
+          } else {
+            onTap();
+          }
+        },
+        borderRadius: context.borderRadiusLarge,
+        child: Padding(
+          padding: EdgeInsets.all(context.spacingLarge),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 48),
+              SizedBox(height: context.spacingMedium),
+              Text(
+                title,
+                style: context.headingMedium,
+              ),
+              SizedBox(height: context.spacingSmall),
+              Text(
+                description,
+                textAlign: TextAlign.center,
+                style: context.bodyMedium.copyWith(color: Colors.grey[600]),
+              ),
+              SizedBox(height: context.spacingMedium),
+              ElevatedButton(
+                onPressed: () {
+                  if (title == 'Doctor') {
+                    _showDoctorOptionsDialog(context);
+                  } else {
+                    onTap();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: color,
+                  foregroundColor: Colors.white,
+                ),
+                child: Text('Continue as $title'),
               ),
             ],
           ),
@@ -93,15 +289,52 @@ class RoleSelectionPage extends StatelessWidget {
       ),
     );
   }
-  
+
+  Widget _buildWorkflowSection() {
+    return Container(
+      padding: EdgeInsets.all(context.spacingMedium),
+      decoration: BoxDecoration(
+        color: context.infoBackgroundColor,
+        borderRadius: context.borderRadiusLarge,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Complete Workflow',
+            style: context.headingSmall,
+          ),
+          SizedBox(height: context.spacingMedium),
+          _buildWorkflowStep(
+            '1',
+            'Doctor creates lab requisition',
+            Icons.medical_services,
+          ),
+          SizedBox(height: context.spacingSmall),
+          _buildWorkflowStep(
+            '2',
+            'Lab technician enters test results',
+            Icons.science,
+          ),
+          SizedBox(height: context.spacingSmall),
+          _buildWorkflowStep(
+            '3',
+            'Doctor views completed lab report',
+            Icons.description,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildWorkflowStep(String number, String text, IconData icon) {
     return Row(
       children: [
         Container(
-          width: 24,
-          height: 24,
-          decoration: const BoxDecoration(
-            color: Colors.blue,
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: context.primaryColor,
             shape: BoxShape.circle,
           ),
           child: Center(
@@ -114,13 +347,117 @@ class RoleSelectionPage extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 12),
-        Icon(icon, size: 16, color: Colors.blue),
-        const SizedBox(width: 8),
+        SizedBox(width: context.spacingSmall),
+        Icon(icon, size: 20, color: context.primaryColor),
+        SizedBox(width: context.spacingSmall),
         Expanded(
-          child: Text(text),
+          child: Text(
+            text,
+            style: context.bodyMedium,
+          ),
         ),
       ],
+    );
+  }
+
+  void _showDoctorOptionsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Select Doctor Option',
+          style: context.headingMedium,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDoctorOptionCard(
+              context,
+              'Doctor Homepage',
+              'Create new lab requisitions',
+              Icons.medical_services,
+              context.primaryColor,
+              () => context.go('/doctor'),
+            ),
+            SizedBox(height: context.spacingMedium),
+            _buildDoctorOptionCard(
+              context,
+              'Requisition History',
+              'View your previous requisitions',
+              Icons.history,
+              context.infoColor,
+              () => context.go('/doctor/history'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDoctorOptionCard(
+    BuildContext context,
+    String title,
+    String description,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        onTap: () {
+          Navigator.pop(context);
+          onTap();
+        },
+        borderRadius: context.borderRadiusMedium,
+        child: Padding(
+          padding: EdgeInsets.all(context.spacingMedium),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(context.spacingMedium),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: context.borderRadiusMedium,
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 32,
+                ),
+              ),
+              SizedBox(width: context.spacingMedium),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: context.headingSmall,
+                    ),
+                    SizedBox(height: context.spacingXSmall),
+                    Text(
+                      description,
+                      style: context.bodySmall.copyWith(color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Colors.grey,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

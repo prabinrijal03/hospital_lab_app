@@ -3,11 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hospital_lab_app/core/di/injection_container.dart';
+import 'package:hospital_lab_app/core/extensions/button_entension.dart';
+import 'package:hospital_lab_app/core/extensions/theme_extension.dart';
 import 'package:hospital_lab_app/data/models/patient_model.dart';
 import 'package:hospital_lab_app/data/models/requisition_model.dart';
 import 'package:hospital_lab_app/presentation/bloc/requisition/requisition_bloc.dart';
 import 'package:hospital_lab_app/presentation/widgets/responsive_container.dart';
-import 'package:hospital_lab_app/presentation/widgets/app_drawer.dart';
 import 'package:uuid/uuid.dart';
 
 class DoctorHomePage extends StatefulWidget {
@@ -23,7 +24,7 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
   final _ageController = TextEditingController();
   final _addressController = TextEditingController();
   final _testController = TextEditingController();
-  
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -32,7 +33,7 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
     _testController.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -53,40 +54,31 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
             ),
           ],
         ),
-        drawer: const AppDrawer(currentRoute: '/doctor'),
         body: BlocConsumer<RequisitionBloc, RequisitionState>(
           listener: (context, state) {
             if (state is RequisitionSubmitSuccess) {
               _showRequisitionSuccessDialog(context, state.id);
             } else if (state is RequisitionError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.message)));
             }
           },
           builder: (context, state) {
             if (state is RequisitionSubmitting) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
+              return const Center(child: CircularProgressIndicator());
             }
-            
+
             return ResponsiveContainer(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(context.spacingMedium),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Patient Information',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
+                      Text('Patient Information', style: context.headingMedium),
+                      SizedBox(height: context.spacingMedium),
                       TextFormField(
                         controller: _nameController,
                         decoration: const InputDecoration(
@@ -101,7 +93,7 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.spacingMedium),
                       TextFormField(
                         controller: _ageController,
                         decoration: const InputDecoration(
@@ -121,7 +113,7 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.spacingMedium),
                       TextFormField(
                         controller: _addressController,
                         decoration: const InputDecoration(
@@ -136,15 +128,12 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 24),
-                      const Text(
+                      SizedBox(height: context.spacingLarge),
+                      Text(
                         'Lab Test Information',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: context.headingMedium,
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.spacingMedium),
                       TextFormField(
                         controller: _testController,
                         decoration: const InputDecoration(
@@ -159,7 +148,7 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.spacingMedium),
                       TextFormField(
                         initialValue: DateTime.now().toString().split(' ')[0],
                         decoration: const InputDecoration(
@@ -169,7 +158,7 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
                         ),
                         readOnly: true,
                       ),
-                      const SizedBox(height: 32),
+                      SizedBox(height: context.spacingXLarge),
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -185,29 +174,22 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
                                 laboratoryTest: _testController.text,
                                 orderDate: DateTime.now(),
                               );
-                              
+
                               context.read<RequisitionBloc>().add(
-                                SubmitRequisitionEvent(requisition: requisition),
+                                SubmitRequisitionEvent(
+                                  requisition: requisition,
+                                ),
                               );
                             }
                           },
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
+                          style: context.primaryButtonStyle,
                           child: const Text(
                             'Submit Requisition',
                             style: TextStyle(fontSize: 16),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Center(
-                        child: TextButton.icon(
-                          onPressed: () => context.go('/doctor/history'),
-                          icon: const Icon(Icons.history),
-                          label: const Text('View Requisition History'),
-                        ),
-                      ),
+                      SizedBox(height: context.spacingMedium),
                     ],
                   ),
                 ),
@@ -218,84 +200,71 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
       ),
     );
   }
-  
+
   void _showRequisitionSuccessDialog(BuildContext context, String id) {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Requisition Submitted'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Your lab requisition has been submitted successfully. Please share this ID with the lab technician:',
-              style: TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      id,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Requisition Submitted'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Your lab requisition has been submitted successfully. Please share this ID with the lab technician:',
+                  style: TextStyle(fontSize: 14),
+                ),
+                SizedBox(height: context.spacingMedium),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: context.borderRadiusMedium,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(child: Text(id, style: context.headingSmall)),
+                      IconButton(
+                        icon: const Icon(Icons.copy),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: id));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Requisition ID copied to clipboard',
+                              ),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        tooltip: 'Copy to clipboard',
                       ),
-                    ),
+                    ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.copy),
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: id));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Requisition ID copied to clipboard'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                    tooltip: 'Copy to clipboard',
-                  ),
-                ],
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  // Navigate back to role selection page
+                  context.go('/');
+                },
+                child: const Text('Close'),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: const Text('Close'),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  context.go('/doctor/report/$id');
+                },
+                style: context.successButtonStyle,
+                child: const Text('View Lab Report'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.go('/doctor/report/$id');
-            },
-            child: const Text('View Lab Report'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.go('/lab/$id');
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.green,
-            ),
-            child: const Text('Go to Lab Technician'),
-          ),
-        ],
-      ),
     );
   }
 }
-

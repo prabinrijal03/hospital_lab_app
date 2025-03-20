@@ -3,17 +3,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hospital_lab_app/core/di/injection_container.dart';
 import 'package:hospital_lab_app/domain/entities/lab_report.dart';
+import 'package:hospital_lab_app/domain/entities/test_result.dart';
 import 'package:hospital_lab_app/presentation/bloc/lab_report/lab_report_bloc.dart';
 import 'package:hospital_lab_app/presentation/widgets/responsive_container.dart';
-import 'package:hospital_lab_app/presentation/widgets/app_drawer.dart';
+import 'package:intl/intl.dart';
 
 class LabReportViewPage extends StatefulWidget {
   final String requisitionId;
 
-  const LabReportViewPage({
-    super.key,
-    required this.requisitionId,
-  });
+  const LabReportViewPage({super.key, required this.requisitionId});
 
   @override
   State<LabReportViewPage> createState() => _LabReportViewPageState();
@@ -43,7 +41,7 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
           centerTitle: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go('/doctor/history'),
+            onPressed: () => context.go('/'),
           ),
           actions: [
             IconButton(
@@ -59,13 +57,10 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
             ),
           ],
         ),
-        drawer: AppDrawer(currentRoute: '/doctor/report/${widget.requisitionId}'),
         body: BlocBuilder<LabReportBloc, LabReportState>(
           builder: (context, state) {
             if (state is LabReportLoading) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
+              return const Center(child: CircularProgressIndicator());
             } else if (state is LabReportLoaded) {
               return _buildLabReportView(context, state.labReport);
             } else if (state is LabReportError) {
@@ -86,7 +81,7 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                 ),
               );
             }
-            
+
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -113,8 +108,10 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
   }
 
   Widget _buildLabReportView(BuildContext context, LabReport report) {
-    final isPending = report.testResults.any((test) => test.result == 'Pending');
-    
+    final isPending = report.testResults.any(
+      (test) => test.result == 'Pending',
+    );
+
     return ResponsiveContainer(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -142,13 +139,21 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                           Chip(
                             label: const Text('Pending'),
                             backgroundColor: Colors.orange.shade100,
-                            avatar: const Icon(Icons.hourglass_empty, color: Colors.orange, size: 16),
+                            avatar: const Icon(
+                              Icons.hourglass_empty,
+                              color: Colors.orange,
+                              size: 16,
+                            ),
                           )
                         else
                           Chip(
                             label: const Text('Completed'),
                             backgroundColor: Colors.green.shade100,
-                            avatar: const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                            avatar: const Icon(
+                              Icons.check_circle,
+                              color: Colors.green,
+                              size: 16,
+                            ),
                           ),
                       ],
                     ),
@@ -158,12 +163,9 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                     _buildInfoRow('Address', report.patient.address),
                     _buildInfoRow(
                       'Lab Result Date',
-                      report.labResultDate.toString().split(' ')[0],
+                      DateFormat('yyyy-MM-dd').format(report.labResultDate),
                     ),
-                    _buildInfoRow(
-                      'Requisition ID',
-                      report.id,
-                    ),
+                    _buildInfoRow('Requisition ID', report.id),
                   ],
                 ),
               ),
@@ -171,10 +173,7 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
             const SizedBox(height: 24),
             const Text(
               'Test Results',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Card(
@@ -192,17 +191,16 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                         0: FlexColumnWidth(2),
                         1: FlexColumnWidth(2),
                         2: FlexColumnWidth(2),
+                        3: FlexColumnWidth(1),
                       },
                       children: [
                         const TableRow(
-                          decoration: BoxDecoration(
-                            color: Colors.blue,
-                          ),
+                          decoration: BoxDecoration(color: Color(0xFF1A73E8)),
                           children: [
                             Padding(
                               padding: EdgeInsets.all(8.0),
                               child: Text(
-                                'Lab Test Name',
+                                'Test Name',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
@@ -212,7 +210,7 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                             Padding(
                               padding: EdgeInsets.all(8.0),
                               child: Text(
-                                'Test Result',
+                                'Result',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
@@ -229,35 +227,21 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                                 ),
                               ),
                             ),
+                            Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text(
+                                'Status',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                         ...report.testResults.map((test) {
-                          final isAbnormal = test.result != 'Pending' && 
-                              !test.referenceRange.contains(test.result);
-                        
-                          return TableRow(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(test.testName),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                  test.result,
-                                  style: TextStyle(
-                                    color: isAbnormal ? Colors.red : null,
-                                    fontWeight: isAbnormal ? FontWeight.bold : null,
-                                  ),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(test.referenceRange),
-                              ),
-                            ],
-                          );
-                        }).toList(),
+                          return _buildTestResultRow(test);
+                        }),
                       ],
                     ),
                     if (isPending)
@@ -271,7 +255,10 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.info_outline, color: Colors.orange),
+                              const Icon(
+                                Icons.info_outline,
+                                color: Colors.orange,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Column(
@@ -310,7 +297,10 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.check_circle_outline, color: Colors.green),
+                              const Icon(
+                                Icons.check_circle_outline,
+                                color: Colors.green,
+                              ),
                               const SizedBox(width: 8),
                               const Text(
                                 'Lab results completed',
@@ -359,6 +349,78 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
     );
   }
 
+  TableRow _buildTestResultRow(TestResult test) {
+    final isPending = test.result == 'Pending';
+    final isAbnormal = !isPending && test.isAbnormal;
+
+    return TableRow(
+      children: [
+        Padding(padding: const EdgeInsets.all(8.0), child: Text(test.testName)),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: [
+              Text(
+                test.result,
+                style: TextStyle(
+                  color:
+                      isPending
+                          ? Colors.grey
+                          : (isAbnormal ? Colors.red : Colors.black),
+                  fontWeight: isAbnormal ? FontWeight.bold : null,
+                ),
+              ),
+              if (test.unit != null && !isPending)
+                Text(
+                  ' ${test.unit}',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(test.referenceRange),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: _buildStatusIndicator(isPending, isAbnormal),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusIndicator(bool isPending, bool isAbnormal) {
+    if (isPending) {
+      return const Icon(Icons.hourglass_empty, color: Colors.orange, size: 16);
+    } else if (isAbnormal) {
+      return Tooltip(
+        message: 'Abnormal result',
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isAbnormal ? Icons.warning_amber : Icons.check_circle,
+              color: isAbnormal ? Colors.red : Colors.green,
+              size: 16,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              isAbnormal ? 'Abnormal' : 'Normal',
+              style: TextStyle(
+                fontSize: 12,
+                color: isAbnormal ? Colors.red : Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      return const Icon(Icons.check_circle, color: Colors.green, size: 16);
+    }
+  }
+
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
@@ -369,17 +431,12 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
             width: 120,
             child: Text(
               '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
-          Expanded(
-            child: Text(value),
-          ),
+          Expanded(child: Text(value)),
         ],
       ),
     );
   }
 }
-

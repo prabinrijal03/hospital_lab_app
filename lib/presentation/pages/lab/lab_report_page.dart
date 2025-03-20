@@ -5,9 +5,10 @@ import 'package:hospital_lab_app/core/di/injection_container.dart';
 import 'package:hospital_lab_app/data/models/lab_report_model.dart';
 import 'package:hospital_lab_app/data/models/test_result_model.dart';
 import 'package:hospital_lab_app/domain/entities/lab_report.dart';
+import 'package:hospital_lab_app/domain/entities/test_result.dart';
 import 'package:hospital_lab_app/presentation/bloc/lab_report/lab_report_bloc.dart';
 import 'package:hospital_lab_app/presentation/widgets/responsive_container.dart';
-import 'package:hospital_lab_app/presentation/widgets/app_drawer.dart';
+import 'package:intl/intl.dart';
 
 class LabReportPage extends StatefulWidget {
   final String? initialRequisitionId;
@@ -24,11 +25,12 @@ class LabReportPage extends StatefulWidget {
 class _LabReportPageState extends State<LabReportPage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _requisitionIdController;
-  final _resultController = TextEditingController();
-  final _referenceRangeController = TextEditingController(text: '4000 – 11000/microliter');
   LabReport? _labReport;
   bool _isReportSubmitted = false;
   late LabReportBloc _labReportBloc;
+  
+  // List to store test result controllers
+  final List<TestResultEntry> _testResults = [];
   
   @override
   void initState() {
@@ -55,9 +57,31 @@ class _LabReportPageState extends State<LabReportPage> {
   @override
   void dispose() {
     _requisitionIdController.dispose();
-    _resultController.dispose();
-    _referenceRangeController.dispose();
+    for (var entry in _testResults) {
+      entry.dispose();
+    }
     super.dispose();
+  }
+  
+  void _addTestResult({TestResult? existingTest}) {
+    setState(() {
+      _testResults.add(
+        TestResultEntry(
+          testNameController: TextEditingController(text: existingTest?.testName ?? ''),
+          resultController: TextEditingController(text: existingTest?.result != 'Pending' ? existingTest?.result : ''),
+          referenceRangeController: TextEditingController(text: existingTest?.referenceRange ?? ''),
+          unitController: TextEditingController(text: existingTest?.unit ?? ''),
+          isReadOnly: existingTest != null && existingTest.result != 'Pending',
+        ),
+      );
+    });
+  }
+  
+  void _removeTestResult(int index) {
+    setState(() {
+      _testResults[index].dispose();
+      _testResults.removeAt(index);
+    });
   }
   
   @override
@@ -80,7 +104,6 @@ class _LabReportPageState extends State<LabReportPage> {
             ),
           ],
         ),
-        drawer: const AppDrawer(currentRoute: '/lab'),
         body: BlocConsumer<LabReportBloc, LabReportState>(
           listener: (context, state) {
             if (state is LabReportLoaded) {
@@ -88,12 +111,26 @@ class _LabReportPageState extends State<LabReportPage> {
                 _labReport = state.labReport;
                 _isReportSubmitted = false;
                 
+                // Clear existing test results
+                for (var entry in _testResults) {
+                  entry.dispose();
+                }
+                _testResults.clear();
+                
                 // Check if this report already has results
-                if (state.labReport.testResults.isNotEmpty && 
-                    state.labReport.testResults.first.result != 'Pending') {
-                  _resultController.text = state.labReport.testResults.first.result;
-                  _referenceRangeController.text = state.labReport.testResults.first.referenceRange;
-                  _isReportSubmitted = true;
+                if (state.labReport.testResults.isNotEmpty) {
+                  // Add each test result to the form
+                  for (var test in state.labReport.testResults) {
+                    _addTestResult(existingTest: test);
+                  }
+                  
+                  // Check if any test has a non-pending result
+                  _isReportSubmitted = state.labReport.testResults.any(
+                    (test) => test.result != 'Pending'
+                  );
+                } else {
+                  // Add an empty test result form
+                  _addTestResult();
                 }
               });
             } else if (state is LabReportSubmitSuccess) {
@@ -203,7 +240,7 @@ class _LabReportPageState extends State<LabReportPage> {
                                 _buildInfoRow('Address', _labReport!.patient.address),
                                 _buildInfoRow(
                                   'Lab Result Date',
-                                  DateTime.now().toString().split(' ')[0],
+                                  DateFormat('yyyy-MM-dd').format(_labReport!.labResultDate),
                                 ),
                               ],
                             ),
@@ -229,76 +266,22 @@ class _LabReportPageState extends State<LabReportPage> {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        Card(
-                          elevation: 2,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Test: ${_getTestName()}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _resultController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Test Result',
-                                    hintText: 'e.g. 16000/microliter',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Please enter test result';
-                                    }
-                                    return null;
-                                  },
-                                  enabled: !_isReportSubmitted,
-                                ),
-                                const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _referenceRangeController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Reference Range',
-                                    border: OutlineInputBorder(),
-                                    helperText: 'Normal range for this test',
-                                  ),
-                                  enabled: !_isReportSubmitted,
-                                ),
-                              ],
+                        ..._buildTestResultForms(),
+                        if (!_isReportSubmitted) ...[
+                          const SizedBox(height: 16),
+                          Center(
+                            child: OutlinedButton.icon(
+                              onPressed: () => _addTestResult(),
+                              icon: const Icon(Icons.add),
+                              label: const Text('Add Another Test'),
                             ),
                           ),
-                        ),
+                        ],
                         const SizedBox(height: 32),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: _isReportSubmitted ? null : () {
-                              if (_formKey.currentState!.validate()) {
-                                // Create updated lab report with test results
-                                final updatedLabReport = LabReportModel(
-                                  id: _labReport!.id,
-                                  patient: _labReport!.patient,
-                                  labResultDate: DateTime.now(),
-                                  laboratoryTest: _labReport!.laboratoryTest,
-                                  testResults: [
-                                    TestResultModel(
-                                      testName: _getTestName(),
-                                      result: _resultController.text,
-                                      referenceRange: _referenceRangeController.text,
-                                    ),
-                                  ],
-                                );
-                                
-                                _labReportBloc.add(
-                                  SubmitLabReportEvent(labReport: updatedLabReport),
-                                );
-                              }
-                            },
+                            onPressed: _isReportSubmitted ? null : _submitLabReport,
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                             ),
@@ -336,13 +319,127 @@ class _LabReportPageState extends State<LabReportPage> {
     );
   }
   
-  String _getTestName() {
-    if (_labReport!.testResults.isNotEmpty) {
-      return _labReport!.testResults.first.testName;
-    } else if (_labReport!.laboratoryTest != null) {
-      return _labReport!.laboratoryTest!;
-    } else {
-      return "Total leucocyte count";
+  List<Widget> _buildTestResultForms() {
+    return List.generate(_testResults.length, (index) {
+      final entry = _testResults[index];
+      return Card(
+        margin: const EdgeInsets.only(bottom: 16),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Test ${index + 1}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  if (!_isReportSubmitted && _testResults.length > 1)
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => _removeTestResult(index),
+                      tooltip: 'Remove Test',
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: entry.testNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Test Name',
+                  hintText: 'e.g. Total leucocyte count',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter test name';
+                  }
+                  return null;
+                },
+                enabled: !entry.isReadOnly,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: entry.resultController,
+                      decoration: const InputDecoration(
+                        labelText: 'Test Result',
+                        hintText: 'e.g. 16000',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter test result';
+                        }
+                        return null;
+                      },
+                      enabled: !entry.isReadOnly,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      controller: entry.unitController,
+                      decoration: const InputDecoration(
+                        labelText: 'Unit',
+                        hintText: 'e.g. /microliter',
+                        border: OutlineInputBorder(),
+                      ),
+                      enabled: !entry.isReadOnly,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: entry.referenceRangeController,
+                decoration: const InputDecoration(
+                  labelText: 'Reference Range',
+                  hintText: 'e.g. 4000 – 11000',
+                  border: OutlineInputBorder(),
+                  helperText: 'Normal range for this test',
+                ),
+                enabled: !entry.isReadOnly,
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+  
+  void _submitLabReport() {
+    if (_formKey.currentState!.validate() && _testResults.isNotEmpty) {
+      // Create test results list
+      final testResults = _testResults.map((entry) {
+        return TestResultModel(
+          testName: entry.testNameController.text,
+          result: entry.resultController.text,
+          referenceRange: entry.referenceRangeController.text,
+          unit: entry.unitController.text.isNotEmpty ? entry.unitController.text : null,
+        );
+      }).toList();
+      
+      // Create updated lab report with test results
+      final updatedLabReport = LabReportModel(
+        id: _labReport!.id,
+        patient: _labReport!.patient,
+        labResultDate: DateTime.now(),
+        laboratoryTest: _labReport!.laboratoryTest,
+        testResults: testResults,
+      );
+      
+      _labReportBloc.add(
+        SubmitLabReportEvent(labReport: updatedLabReport),
+      );
     }
   }
   
@@ -394,6 +491,29 @@ class _LabReportPageState extends State<LabReportPage> {
         ],
       ),
     );
+  }
+}
+
+class TestResultEntry {
+  final TextEditingController testNameController;
+  final TextEditingController resultController;
+  final TextEditingController referenceRangeController;
+  final TextEditingController unitController;
+  final bool isReadOnly;
+  
+  TestResultEntry({
+    required this.testNameController,
+    required this.resultController,
+    required this.referenceRangeController,
+    required this.unitController,
+    this.isReadOnly = false,
+  });
+  
+  void dispose() {
+    testNameController.dispose();
+    resultController.dispose();
+    referenceRangeController.dispose();
+    unitController.dispose();
   }
 }
 
