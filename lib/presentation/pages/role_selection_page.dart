@@ -133,57 +133,28 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
               ),
               child: Text('Dashboard', style: context.headingMedium),
             ),
-            MediaQuery.of(context).size.width < 600
-                ? Column(
-                  children: [
-                    _buildStatCard(
-                      'Total Requisitions',
-                      _totalRequisitions.toString(),
-                      Icons.description,
-                      context.infoColor,
-                    ),
-                    _buildStatCard(
-                      'Completed Reports',
-                      _completedReports.toString(),
-                      Icons.check_circle,
-                      context.successColor,
-                    ),
-                    _buildStatCard(
-                      'Pending Reports',
-                      _pendingReports.toString(),
-                      Icons.hourglass_empty,
-                      context.warningColor,
-                    ),
-                  ],
-                )
-                : Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatCard(
-                        'Total Requisitions',
-                        _totalRequisitions.toString(),
-                        Icons.description,
-                        context.infoColor,
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildStatCard(
-                        'Completed Reports',
-                        _completedReports.toString(),
-                        Icons.check_circle,
-                        context.successColor,
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildStatCard(
-                        'Pending Reports',
-                        _pendingReports.toString(),
-                        Icons.hourglass_empty,
-                        context.warningColor,
-                      ),
-                    ),
-                  ],
+            Row(
+              children: [
+                _buildStatCard(
+                  'Total Requisitions',
+                  _totalRequisitions.toString(),
+                  Icons.description,
+                  context.infoColor,
                 ),
+                _buildStatCard(
+                  'Completed Reports',
+                  _completedReports.toString(),
+                  Icons.check_circle,
+                  context.successColor,
+                ),
+                _buildStatCard(
+                  'Pending Reports',
+                  _pendingReports.toString(),
+                  Icons.hourglass_empty,
+                  context.warningColor,
+                ),
+              ],
+            ),
           ],
         );
   }
@@ -194,22 +165,24 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
     IconData icon,
     Color color,
   ) {
-    return Card(
-      margin: EdgeInsets.all(context.spacingSmall),
-      child: Padding(
-        padding: EdgeInsets.all(context.spacingMedium),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 32),
-            SizedBox(height: context.spacingSmall),
-            Text(value, style: context.headingLarge.copyWith(color: color)),
-            SizedBox(height: context.spacingXSmall),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: context.bodySmall.copyWith(color: Colors.grey[600]),
-            ),
-          ],
+    return Expanded(
+      child: Card(
+        margin: EdgeInsets.all(context.spacingSmall),
+        child: Padding(
+          padding: EdgeInsets.all(context.spacingMedium),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 32),
+              SizedBox(height: context.spacingSmall),
+              Text(value, style: context.headingLarge.copyWith(color: color)),
+              SizedBox(height: context.spacingXSmall),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: context.bodySmall.copyWith(color: Colors.grey[600]),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -406,8 +379,8 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                 SizedBox(height: context.spacingMedium),
                 _buildDoctorOptionCard(
                   context,
-                  'Requisition History',
-                  'View your previous requisitions',
+                  'Reports History',
+                  'View your previous reports',
                   Icons.history,
                   context.infoColor,
                   () => context.go('/doctor/history'),
