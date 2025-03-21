@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hospital_lab_app/core/di/injection_container.dart';
+import 'package:hospital_lab_app/core/extensions/button_entension.dart';
+import 'package:hospital_lab_app/core/extensions/theme_extension.dart';
 import 'package:hospital_lab_app/data/models/lab_report_model.dart';
 import 'package:hospital_lab_app/data/models/test_result_model.dart';
 import 'package:hospital_lab_app/domain/entities/lab_report.dart';
@@ -12,11 +14,8 @@ import 'package:intl/intl.dart';
 
 class LabReportPage extends StatefulWidget {
   final String? initialRequisitionId;
-  
-  const LabReportPage({
-    super.key,
-    this.initialRequisitionId,
-  });
+
+  const LabReportPage({super.key, this.initialRequisitionId});
 
   @override
   State<LabReportPage> createState() => _LabReportPageState();
@@ -28,32 +27,32 @@ class _LabReportPageState extends State<LabReportPage> {
   LabReport? _labReport;
   bool _isReportSubmitted = false;
   late LabReportBloc _labReportBloc;
-  
-  // List to store test result controllers
+
+  // store test result
   final List<TestResultEntry> _testResults = [];
-  
+
   @override
   void initState() {
     super.initState();
-    _requisitionIdController = TextEditingController(text: widget.initialRequisitionId ?? '');
+    _requisitionIdController = TextEditingController(
+      text: widget.initialRequisitionId ?? '',
+    );
     _labReportBloc = sl<LabReportBloc>();
-    
-    // If we have an initial requisition ID, fetch the report
-    if (widget.initialRequisitionId != null && widget.initialRequisitionId!.isNotEmpty) {
+
+    if (widget.initialRequisitionId != null &&
+        widget.initialRequisitionId!.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _fetchLabReport();
       });
     }
   }
-  
+
   void _fetchLabReport() {
     if (_requisitionIdController.text.isNotEmpty) {
-      _labReportBloc.add(
-        GetLabReportEvent(id: _requisitionIdController.text),
-      );
+      _labReportBloc.add(GetLabReportEvent(id: _requisitionIdController.text));
     }
   }
-  
+
   @override
   void dispose() {
     _requisitionIdController.dispose();
@@ -62,28 +61,34 @@ class _LabReportPageState extends State<LabReportPage> {
     }
     super.dispose();
   }
-  
+
   void _addTestResult({TestResult? existingTest}) {
     setState(() {
       _testResults.add(
         TestResultEntry(
-          testNameController: TextEditingController(text: existingTest?.testName ?? ''),
-          resultController: TextEditingController(text: existingTest?.result != 'Pending' ? existingTest?.result : ''),
-          referenceRangeController: TextEditingController(text: existingTest?.referenceRange ?? ''),
+          testNameController: TextEditingController(
+            text: existingTest?.testName ?? '',
+          ),
+          resultController: TextEditingController(
+            text: existingTest?.result != 'Pending' ? existingTest?.result : '',
+          ),
+          referenceRangeController: TextEditingController(
+            text: existingTest?.referenceRange ?? '',
+          ),
           unitController: TextEditingController(text: existingTest?.unit ?? ''),
           isReadOnly: existingTest != null && existingTest.result != 'Pending',
         ),
       );
     });
   }
-  
+
   void _removeTestResult(int index) {
     setState(() {
       _testResults[index].dispose();
       _testResults.removeAt(index);
     });
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -96,13 +101,6 @@ class _LabReportPageState extends State<LabReportPage> {
             icon: const Icon(Icons.arrow_back),
             onPressed: () => context.go('/'),
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.person),
-              onPressed: () => context.go('/doctor'),
-              tooltip: 'Switch to Doctor View',
-            ),
-          ],
         ),
         body: BlocConsumer<LabReportBloc, LabReportState>(
           listener: (context, state) {
@@ -110,26 +108,21 @@ class _LabReportPageState extends State<LabReportPage> {
               setState(() {
                 _labReport = state.labReport;
                 _isReportSubmitted = false;
-                
-                // Clear existing test results
+
                 for (var entry in _testResults) {
                   entry.dispose();
                 }
                 _testResults.clear();
-                
-                // Check if this report already has results
+
                 if (state.labReport.testResults.isNotEmpty) {
-                  // Add each test result to the form
                   for (var test in state.labReport.testResults) {
                     _addTestResult(existingTest: test);
                   }
-                  
-                  // Check if any test has a non-pending result
+
                   _isReportSubmitted = state.labReport.testResults.any(
-                    (test) => test.result != 'Pending'
+                    (test) => test.result != 'Pending',
                   );
                 } else {
-                  // Add an empty test result form
                   _addTestResult();
                 }
               });
@@ -137,20 +130,18 @@ class _LabReportPageState extends State<LabReportPage> {
               setState(() {
                 _isReportSubmitted = true;
               });
-              
+
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Lab report submitted successfully'),
                   backgroundColor: Colors.green,
                 ),
               );
-              
-              // Refresh the lab report to see the updated data
+
               _labReportBloc.add(
                 GetLabReportEvent(id: _requisitionIdController.text),
               );
-              
-              // Show dialog with option to view as doctor
+
               _showSubmitSuccessDialog(context);
             } else if (state is LabReportError) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -163,35 +154,27 @@ class _LabReportPageState extends State<LabReportPage> {
           },
           builder: (context, state) {
             if (state is LabReportSubmitting || state is LabReportLoading) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
+              return const Center(child: CircularProgressIndicator());
             }
-            
+
             return ResponsiveContainer(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(context.spacingMedium),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Enter Requisition ID',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: context.headingMedium,
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
+                      SizedBox(height: context.spacingSmall),
+                      Text(
                         'Ask the doctor for the requisition ID that was generated when they submitted the lab requisition form.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
+                        style: context.bodySmall.copyWith(color: Colors.grey),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.spacingMedium),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -211,102 +194,90 @@ class _LabReportPageState extends State<LabReportPage> {
                               },
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          SizedBox(width: context.spacingMedium),
                           ElevatedButton(
                             onPressed: _fetchLabReport,
+                            style: context.primaryButtonStyle,
                             child: const Text('Fetch'),
                           ),
                         ],
                       ),
                       if (_labReport != null) ...[
-                        const SizedBox(height: 24),
-                        const Text(
+                        SizedBox(height: context.spacingLarge),
+                        Text(
                           'Patient Information',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: context.headingMedium,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.spacingMedium),
                         Card(
                           elevation: 2,
                           child: Padding(
-                            padding: const EdgeInsets.all(16.0),
+                            padding: EdgeInsets.all(context.spacingMedium),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _buildInfoRow('Name', _labReport!.patient.name),
-                                _buildInfoRow('Age', '${_labReport!.patient.age} years'),
-                                _buildInfoRow('Address', _labReport!.patient.address),
+                                _buildInfoRow(
+                                  'Age',
+                                  '${_labReport!.patient.age} years',
+                                ),
+                                _buildInfoRow(
+                                  'Address',
+                                  _labReport!.patient.address,
+                                ),
                                 _buildInfoRow(
                                   'Lab Result Date',
-                                  DateFormat('yyyy-MM-dd').format(_labReport!.labResultDate),
+                                  DateFormat(
+                                    'yyyy-MM-dd',
+                                  ).format(_labReport!.labResultDate),
                                 ),
                               ],
                             ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: context.spacingLarge),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'Test Results',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            Text('Test Results', style: context.headingMedium),
                             if (_isReportSubmitted)
                               Chip(
                                 label: const Text('Results Submitted'),
-                                backgroundColor: Colors.green.shade100,
-                                avatar: const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                                backgroundColor: context.successBackgroundColor,
+                                avatar: Icon(
+                                  Icons.check_circle,
+                                  color: context.successColor,
+                                  size: 16,
+                                ),
                               ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: context.spacingMedium),
                         ..._buildTestResultForms(),
-                        if (!_isReportSubmitted) ...[
-                          const SizedBox(height: 16),
-                          Center(
-                            child: OutlinedButton.icon(
-                              onPressed: () => _addTestResult(),
-                              icon: const Icon(Icons.add),
-                              label: const Text('Add Another Test'),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 32),
+
+                        SizedBox(height: context.spacingLarge),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: _isReportSubmitted ? null : _submitLabReport,
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
+                            onPressed:
+                                _isReportSubmitted ? null : _submitLabReport,
+                            style:
+                                _isReportSubmitted
+                                    ? ElevatedButton.styleFrom(
+                                      disabledBackgroundColor:
+                                          Colors.grey.shade300,
+                                      disabledForegroundColor:
+                                          Colors.grey.shade700,
+                                    )
+                                    : context.successButtonStyle,
                             child: Text(
-                              _isReportSubmitted ? 'Results Already Submitted' : 'Submit Lab Report',
+                              _isReportSubmitted
+                                  ? 'Results Already Submitted'
+                                  : 'Submit Lab Report',
                               style: const TextStyle(fontSize: 16),
                             ),
                           ),
                         ),
-                        if (_isReportSubmitted) ...[
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                context.go('/doctor/report/${_labReport!.id}');
-                              },
-                              icon: const Icon(Icons.visibility),
-                              label: const Text('View as Doctor'),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                              ),
-                            ),
-                          ),
-                        ],
                       ],
                     ],
                   ),
@@ -318,27 +289,21 @@ class _LabReportPageState extends State<LabReportPage> {
       ),
     );
   }
-  
+
   List<Widget> _buildTestResultForms() {
     return List.generate(_testResults.length, (index) {
       final entry = _testResults[index];
       return Card(
-        margin: const EdgeInsets.only(bottom: 16),
+        margin: EdgeInsets.only(bottom: context.spacingMedium),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: EdgeInsets.all(context.spacingMedium),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Test ${index + 1}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
+                  Text('Test ${index + 1}', style: context.headingSmall),
                   if (!_isReportSubmitted && _testResults.length > 1)
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
@@ -347,7 +312,7 @@ class _LabReportPageState extends State<LabReportPage> {
                     ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.spacingMedium),
               TextFormField(
                 controller: entry.testNameController,
                 decoration: const InputDecoration(
@@ -363,7 +328,7 @@ class _LabReportPageState extends State<LabReportPage> {
                 },
                 enabled: !entry.isReadOnly,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.spacingMedium),
               Row(
                 children: [
                   Expanded(
@@ -384,7 +349,7 @@ class _LabReportPageState extends State<LabReportPage> {
                       enabled: !entry.isReadOnly,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: context.spacingMedium),
                   Expanded(
                     child: TextFormField(
                       controller: entry.unitController,
@@ -398,7 +363,7 @@ class _LabReportPageState extends State<LabReportPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.spacingMedium),
               TextFormField(
                 controller: entry.referenceRangeController,
                 decoration: const InputDecoration(
@@ -415,20 +380,22 @@ class _LabReportPageState extends State<LabReportPage> {
       );
     });
   }
-  
+
   void _submitLabReport() {
     if (_formKey.currentState!.validate() && _testResults.isNotEmpty) {
-      // Create test results list
-      final testResults = _testResults.map((entry) {
-        return TestResultModel(
-          testName: entry.testNameController.text,
-          result: entry.resultController.text,
-          referenceRange: entry.referenceRangeController.text,
-          unit: entry.unitController.text.isNotEmpty ? entry.unitController.text : null,
-        );
-      }).toList();
-      
-      // Create updated lab report with test results
+      final testResults =
+          _testResults.map((entry) {
+            return TestResultModel(
+              testName: entry.testNameController.text,
+              result: entry.resultController.text,
+              referenceRange: entry.referenceRangeController.text,
+              unit:
+                  entry.unitController.text.isNotEmpty
+                      ? entry.unitController.text
+                      : null,
+            );
+          }).toList();
+
       final updatedLabReport = LabReportModel(
         id: _labReport!.id,
         patient: _labReport!.patient,
@@ -436,43 +403,43 @@ class _LabReportPageState extends State<LabReportPage> {
         laboratoryTest: _labReport!.laboratoryTest,
         testResults: testResults,
       );
-      
-      _labReportBloc.add(
-        SubmitLabReportEvent(labReport: updatedLabReport),
-      );
+
+      _labReportBloc.add(SubmitLabReportEvent(labReport: updatedLabReport));
     }
   }
-  
+
   void _showSubmitSuccessDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Report Submitted Successfully'),
-        content: const Text(
-          'The lab report has been submitted successfully. Would you like to view the report as a doctor to see how it appears?'
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: const Text('Stay Here'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Report Submitted Successfully'),
+            content: const Text(
+              'The lab report has been submitted successfully. Would you like to view the reports history?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('Stay Here'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  context.go('/doctor/history');
+                },
+                style: context.successButtonStyle,
+                child: const Text('View reports history'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.go('/doctor/report/${_labReport!.id}');
-            },
-            child: const Text('View as Doctor'),
-          ),
-        ],
-      ),
     );
   }
-  
+
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: EdgeInsets.only(bottom: context.spacingSmall),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -480,14 +447,10 @@ class _LabReportPageState extends State<LabReportPage> {
             width: 100,
             child: Text(
               '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
-          Expanded(
-            child: Text(value),
-          ),
+          Expanded(child: Text(value)),
         ],
       ),
     );
@@ -500,7 +463,7 @@ class TestResultEntry {
   final TextEditingController referenceRangeController;
   final TextEditingController unitController;
   final bool isReadOnly;
-  
+
   TestResultEntry({
     required this.testNameController,
     required this.resultController,
@@ -508,7 +471,7 @@ class TestResultEntry {
     required this.unitController,
     this.isReadOnly = false,
   });
-  
+
   void dispose() {
     testNameController.dispose();
     resultController.dispose();
@@ -516,4 +479,3 @@ class TestResultEntry {
     unitController.dispose();
   }
 }
-

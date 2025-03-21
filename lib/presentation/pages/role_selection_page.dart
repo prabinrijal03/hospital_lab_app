@@ -30,12 +30,10 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
       _isLoading = true;
     });
 
-    // Get SharedPreferences directly
     final sharedPreferences = await SharedPreferences.getInstance();
-    
-    // Create repository directly
+
     _repository = LabRepositoryImpl(sharedPreferences: sharedPreferences);
-    
+
     _loadStats();
   }
 
@@ -63,10 +61,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Hospital Lab App'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Hospital Lab App'), centerTitle: true),
       body: ResponsiveContainer(
         child: SingleChildScrollView(
           child: Column(
@@ -99,11 +94,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.local_hospital,
-                color: Colors.white,
-                size: 40,
-              ),
+              const Icon(Icons.local_hospital, color: Colors.white, size: 40),
               SizedBox(width: context.spacingMedium),
               Expanded(
                 child: Column(
@@ -115,7 +106,9 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                     ),
                     Text(
                       'Manage lab requisitions and reports',
-                      style: context.bodyMedium.copyWith(color: Colors.white.withOpacity(0.9)),
+                      style: context.bodyMedium.copyWith(
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
                     ),
                   ],
                 ),
@@ -131,48 +124,53 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
     return _isLoading
         ? const Center(child: CircularProgressIndicator())
         : Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.only(left: context.spacingMedium, bottom: context.spacingSmall),
-                child: Text(
-                  'Dashboard',
-                  style: context.headingMedium,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.only(
+                left: context.spacingMedium,
+                bottom: context.spacingSmall,
+              ),
+              child: Text('Dashboard', style: context.headingMedium),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    'Total Reports',
+                    _totalRequisitions.toString(),
+                    Icons.description,
+                    context.infoColor,
+                  ),
                 ),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      'Total Requisitions',
-                      _totalRequisitions.toString(),
-                      Icons.description,
-                      context.infoColor,
-                    ),
+                Expanded(
+                  child: _buildStatCard(
+                    'Completed Reports',
+                    _completedReports.toString(),
+                    Icons.check_circle,
+                    context.successColor,
                   ),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Completed Reports',
-                      _completedReports.toString(),
-                      Icons.check_circle,
-                      context.successColor,
-                    ),
+                ),
+                Expanded(
+                  child: _buildStatCard(
+                    'Pending Reports',
+                    _pendingReports.toString(),
+                    Icons.hourglass_empty,
+                    context.warningColor,
                   ),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Pending Reports',
-                      _pendingReports.toString(),
-                      Icons.hourglass_empty,
-                      context.warningColor,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          );
+                ),
+              ],
+            ),
+          ],
+        );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Card(
       margin: EdgeInsets.all(context.spacingSmall),
       child: Padding(
@@ -181,10 +179,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
           children: [
             Icon(icon, color: color, size: 32),
             SizedBox(height: context.spacingSmall),
-            Text(
-              value,
-              style: context.headingLarge.copyWith(color: color),
-            ),
+            Text(value, style: context.headingLarge.copyWith(color: color)),
             SizedBox(height: context.spacingXSmall),
             Text(
               title,
@@ -202,11 +197,11 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.only(left: context.spacingMedium, bottom: context.spacingMedium),
-          child: Text(
-            'Select your role',
-            style: context.headingMedium,
+          padding: EdgeInsets.only(
+            left: context.spacingMedium,
+            bottom: context.spacingMedium,
           ),
+          child: Text('Select your role', style: context.headingMedium),
         ),
         Row(
           children: [
@@ -243,48 +238,35 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
   ) {
     return Card(
       margin: EdgeInsets.all(context.spacingSmall),
-      child: InkWell(
-        onTap: () {
-          if (title == 'Doctor') {
-            _showDoctorOptionsDialog(context);
-          } else {
-            onTap();
-          }
-        },
-        borderRadius: context.borderRadiusLarge,
-        child: Padding(
-          padding: EdgeInsets.all(context.spacingLarge),
-          child: Column(
-            children: [
-              Icon(icon, color: color, size: 48),
-              SizedBox(height: context.spacingMedium),
-              Text(
-                title,
-                style: context.headingMedium,
+      child: Padding(
+        padding: EdgeInsets.all(context.spacingLarge),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 48),
+            SizedBox(height: context.spacingMedium),
+            Text(title, style: context.headingMedium),
+            SizedBox(height: context.spacingSmall),
+            Text(
+              description,
+              textAlign: TextAlign.center,
+              style: context.bodyMedium.copyWith(color: Colors.grey[600]),
+            ),
+            SizedBox(height: context.spacingMedium),
+            ElevatedButton(
+              onPressed: () {
+                if (title == 'Doctor') {
+                  _showDoctorOptionsDialog(context);
+                } else {
+                  onTap();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: color,
+                foregroundColor: Colors.white,
               ),
-              SizedBox(height: context.spacingSmall),
-              Text(
-                description,
-                textAlign: TextAlign.center,
-                style: context.bodyMedium.copyWith(color: Colors.grey[600]),
-              ),
-              SizedBox(height: context.spacingMedium),
-              ElevatedButton(
-                onPressed: () {
-                  if (title == 'Doctor') {
-                    _showDoctorOptionsDialog(context);
-                  } else {
-                    onTap();
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: color,
-                  foregroundColor: Colors.white,
-                ),
-                child: Text('Continue as $title'),
-              ),
-            ],
-          ),
+              child: Text('Continue as $title'),
+            ),
+          ],
         ),
       ),
     );
@@ -300,10 +282,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Complete Workflow',
-            style: context.headingSmall,
-          ),
+          Text('Complete Workflow', style: context.headingSmall),
           SizedBox(height: context.spacingMedium),
           _buildWorkflowStep(
             '1',
@@ -350,12 +329,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
         SizedBox(width: context.spacingSmall),
         Icon(icon, size: 20, color: context.primaryColor),
         SizedBox(width: context.spacingSmall),
-        Expanded(
-          child: Text(
-            text,
-            style: context.bodyMedium,
-          ),
-        ),
+        Expanded(child: Text(text, style: context.bodyMedium)),
       ],
     );
   }
@@ -363,40 +337,38 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
   void _showDoctorOptionsDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Select Doctor Option',
-          style: context.headingMedium,
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildDoctorOptionCard(
-              context,
-              'Doctor Homepage',
-              'Create new lab requisitions',
-              Icons.medical_services,
-              context.primaryColor,
-              () => context.go('/doctor'),
+      builder:
+          (context) => AlertDialog(
+            title: Text('Select Doctor Option', style: context.headingMedium),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildDoctorOptionCard(
+                  context,
+                  'Doctor Homepage',
+                  'Create new lab requisitions',
+                  Icons.medical_services,
+                  context.primaryColor,
+                  () => context.go('/doctor'),
+                ),
+                SizedBox(height: context.spacingMedium),
+                _buildDoctorOptionCard(
+                  context,
+                  'Lab Reports',
+                  'View your previous reports',
+                  Icons.history,
+                  context.infoColor,
+                  () => context.go('/doctor/history'),
+                ),
+              ],
             ),
-            SizedBox(height: context.spacingMedium),
-            _buildDoctorOptionCard(
-              context,
-              'Requisition History',
-              'View your previous requisitions',
-              Icons.history,
-              context.infoColor,
-              () => context.go('/doctor/history'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -423,37 +395,28 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
               Container(
                 padding: EdgeInsets.all(context.spacingMedium),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: context.borderRadiusMedium,
                 ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 32,
-                ),
+                child: Icon(icon, color: color, size: 32),
               ),
               SizedBox(width: context.spacingMedium),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: context.headingSmall,
-                    ),
+                    Text(title, style: context.headingSmall),
                     SizedBox(height: context.spacingXSmall),
                     Text(
                       description,
-                      style: context.bodySmall.copyWith(color: Colors.grey[600]),
+                      style: context.bodySmall.copyWith(
+                        color: Colors.grey[600],
+                      ),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: Colors.grey,
-              ),
+              Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
             ],
           ),
         ),
@@ -461,4 +424,3 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
     );
   }
 }
-

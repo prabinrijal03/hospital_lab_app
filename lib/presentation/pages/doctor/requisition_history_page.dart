@@ -23,19 +23,14 @@ class _RequisitionHistoryPageState extends State<RequisitionHistoryPage> {
   @override
   void initState() {
     super.initState();
-    // Get the repository from the service locator
     try {
       _repository = sl<LabRepositoryImpl>();
     } catch (e) {
-      // Fallback to using the interface and casting
       try {
         _repository = sl<LabRepository>() as LabRepositoryImpl;
       } catch (e) {
-        // Create a new instance as last resort
-        // Get SharedPreferences from service locator
         final sharedPreferences = sl<SharedPreferences>();
         _repository = LabRepositoryImpl(sharedPreferences: sharedPreferences);
-        print('Warning: Created new repository instance. This may not have the same data as the singleton.');
       }
     }
     _loadRequisitions();
@@ -46,12 +41,12 @@ class _RequisitionHistoryPageState extends State<RequisitionHistoryPage> {
       _isLoading = true;
     });
 
-    // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 500));
-    
-    // Get requisitions from repository
+
     final requisitions = _repository.getRequisitions();
-    
+
+    requisitions.sort((a, b) => b.orderDate.compareTo(a.orderDate));
+
     setState(() {
       _requisitions = requisitions;
       _isLoading = false;
@@ -66,7 +61,7 @@ class _RequisitionHistoryPageState extends State<RequisitionHistoryPage> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/doctor'),
+          onPressed: () => context.go('/'),
         ),
         actions: [
           IconButton(
@@ -76,9 +71,10 @@ class _RequisitionHistoryPageState extends State<RequisitionHistoryPage> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _requisitions.isEmpty
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _requisitions.isEmpty
               ? _buildEmptyState()
               : _buildRequisitionList(),
     );
@@ -90,25 +86,16 @@ class _RequisitionHistoryPageState extends State<RequisitionHistoryPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.history,
-              size: 64,
-              color: Colors.grey,
-            ),
+            const Icon(Icons.history, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             const Text(
               'No requisitions found',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
               'Submit a lab requisition to see it here',
-              style: TextStyle(
-                color: Colors.grey,
-              ),
+              style: TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
@@ -128,7 +115,7 @@ class _RequisitionHistoryPageState extends State<RequisitionHistoryPage> {
         itemBuilder: (context, index) {
           final requisition = _requisitions[index];
           final hasResults = _repository.hasLabReport(requisition.id);
-          
+
           return Card(
             margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             child: ListTile(
@@ -148,10 +135,7 @@ class _RequisitionHistoryPageState extends State<RequisitionHistoryPage> {
                   const SizedBox(height: 4),
                   Text(
                     'Date: ${requisition.orderDate.toString().split(' ')[0]}',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -166,9 +150,7 @@ class _RequisitionHistoryPageState extends State<RequisitionHistoryPage> {
                       Expanded(
                         child: Text(
                           requisition.id,
-                          style: const TextStyle(
-                            fontSize: 12,
-                          ),
+                          style: const TextStyle(fontSize: 12),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -177,10 +159,14 @@ class _RequisitionHistoryPageState extends State<RequisitionHistoryPage> {
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                         onPressed: () {
-                          Clipboard.setData(ClipboardData(text: requisition.id));
+                          Clipboard.setData(
+                            ClipboardData(text: requisition.id),
+                          );
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Requisition ID copied to clipboard'),
+                              content: Text(
+                                'Requisition ID copied to clipboard',
+                              ),
                               duration: Duration(seconds: 2),
                             ),
                           );
@@ -192,11 +178,12 @@ class _RequisitionHistoryPageState extends State<RequisitionHistoryPage> {
                   const SizedBox(height: 8),
                   Chip(
                     label: Text(hasResults ? 'Results Available' : 'Pending'),
-                    backgroundColor: hasResults 
-                        ? Colors.green.shade100 
-                        : Colors.orange.shade100,
+                    backgroundColor:
+                        hasResults
+                            ? Colors.green.shade100
+                            : Colors.orange.shade100,
                     avatar: Icon(
-                      hasResults ? Icons.check_circle : Icons.hourglass_empty, 
+                      hasResults ? Icons.check_circle : Icons.hourglass_empty,
                       size: 16,
                       color: hasResults ? Colors.green : Colors.orange,
                     ),
@@ -230,4 +217,3 @@ class _RequisitionHistoryPageState extends State<RequisitionHistoryPage> {
     );
   }
 }
-

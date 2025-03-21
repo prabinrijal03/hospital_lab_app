@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hospital_lab_app/core/di/injection_container.dart';
+import 'package:hospital_lab_app/core/extensions/theme_extension.dart';
 import 'package:hospital_lab_app/domain/entities/lab_report.dart';
 import 'package:hospital_lab_app/domain/entities/test_result.dart';
 import 'package:hospital_lab_app/presentation/bloc/lab_report/lab_report_bloc.dart';
@@ -43,19 +44,6 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
             icon: const Icon(Icons.arrow_back),
             onPressed: () => context.go('/'),
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _fetchLabReport,
-              tooltip: 'Refresh report',
-            ),
-            IconButton(
-              icon: const Icon(Icons.science),
-              onPressed: () => context.go('/lab/${widget.requisitionId}'),
-              tooltip: 'Go to Lab Technician',
-              color: Colors.green,
-            ),
-          ],
         ),
         body: BlocBuilder<LabReportBloc, LabReportState>(
           builder: (context, state) {
@@ -97,12 +85,6 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
             );
           },
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: _fetchLabReport,
-          icon: const Icon(Icons.refresh),
-          label: const Text('Refresh'),
-          tooltip: 'Refresh lab report',
-        ),
       ),
     );
   }
@@ -114,14 +96,14 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
 
     return ResponsiveContainer(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(context.spacingMedium),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Card(
               elevation: 2,
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(context.spacingMedium),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -157,7 +139,7 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: context.spacingMedium),
                     _buildInfoRow('Name', report.patient.name),
                     _buildInfoRow('Age', '${report.patient.age} years'),
                     _buildInfoRow('Address', report.patient.address),
@@ -170,16 +152,16 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: context.spacingLarge),
             const Text(
               'Test Results',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: context.spacingMedium),
             Card(
               elevation: 2,
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(context.spacingMedium),
                 child: Column(
                   children: [
                     Table(
@@ -246,9 +228,9 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                     ),
                     if (isPending)
                       Padding(
-                        padding: const EdgeInsets.only(top: 16.0),
+                        padding: EdgeInsets.only(top: context.spacingMedium),
                         child: Container(
-                          padding: const EdgeInsets.all(12.0),
+                          padding: EdgeInsets.all(context.spacingMedium),
                           decoration: BoxDecoration(
                             color: Colors.orange.shade100,
                             borderRadius: BorderRadius.circular(4),
@@ -259,7 +241,7 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                                 Icons.info_outline,
                                 color: Colors.orange,
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: context.spacingSmall),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,9 +253,9 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                                         color: Colors.orange,
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
+                                    SizedBox(height: context.spacingXSmall),
                                     const Text(
-                                      'The lab technician has not submitted the results yet. Please check back later or refresh the page.',
+                                      'The lab technician has not submitted the results yet. Please check back later.',
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: Colors.black87,
@@ -288,9 +270,9 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                       ),
                     if (!isPending)
                       Padding(
-                        padding: const EdgeInsets.only(top: 16.0),
+                        padding: EdgeInsets.only(top: context.spacingMedium),
                         child: Container(
-                          padding: const EdgeInsets.all(12.0),
+                          padding: EdgeInsets.all(context.spacingMedium),
                           decoration: BoxDecoration(
                             color: Colors.green.shade100,
                             borderRadius: BorderRadius.circular(4),
@@ -301,7 +283,7 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                                 Icons.check_circle_outline,
                                 color: Colors.green,
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: context.spacingSmall),
                               const Text(
                                 'Lab results completed',
                                 style: TextStyle(
@@ -316,32 +298,6 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _fetchLabReport,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Refresh Report'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => context.go('/lab/${widget.requisitionId}'),
-                    icon: const Icon(Icons.science),
-                    label: const Text('Go to Lab'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                  ),
-                ),
-              ],
             ),
           ],
         ),

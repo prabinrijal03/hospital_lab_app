@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hospital_lab_app/core/di/injection_container.dart';
 import 'package:hospital_lab_app/core/extensions/button_entension.dart';
 import 'package:hospital_lab_app/core/extensions/theme_extension.dart';
+import 'package:hospital_lab_app/data/models/lab_test_model.dart';
 import 'package:hospital_lab_app/data/models/patient_model.dart';
 import 'package:hospital_lab_app/data/models/requisition_model.dart';
 import 'package:hospital_lab_app/presentation/bloc/requisition/requisition_bloc.dart';
@@ -23,15 +24,46 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
   final _nameController = TextEditingController();
   final _ageController = TextEditingController();
   final _addressController = TextEditingController();
-  final _testController = TextEditingController();
+
+  // store test entries
+  final List<LabTestEntry> _labTests = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _addLabTest();
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
     _ageController.dispose();
     _addressController.dispose();
-    _testController.dispose();
+
+    for (var test in _labTests) {
+      test.dispose();
+    }
+
     super.dispose();
+  }
+
+  void _addLabTest() {
+    setState(() {
+      _labTests.add(
+        LabTestEntry(
+          testNameController: TextEditingController(),
+          referenceRangeController: TextEditingController(),
+          unitController: TextEditingController(),
+        ),
+      );
+    });
+  }
+
+  void _removeLabTest(int index) {
+    setState(() {
+      _labTests[index].dispose();
+      _labTests.removeAt(index);
+    });
   }
 
   @override
@@ -129,25 +161,23 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
                         },
                       ),
                       SizedBox(height: context.spacingLarge),
-                      Text(
-                        'Lab Test Information',
-                        style: context.headingMedium,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Lab Test Information',
+                            style: context.headingMedium,
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.add_circle),
+                            color: context.successColor,
+                            onPressed: _addLabTest,
+                            tooltip: 'Add another test',
+                          ),
+                        ],
                       ),
                       SizedBox(height: context.spacingMedium),
-                      TextFormField(
-                        controller: _testController,
-                        decoration: const InputDecoration(
-                          labelText: 'Laboratory Test',
-                          hintText: 'e.g. Total leucocyte count',
-                          border: OutlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter laboratory test';
-                          }
-                          return null;
-                        },
-                      ),
+                      ..._buildLabTestForms(),
                       SizedBox(height: context.spacingMedium),
                       TextFormField(
                         initialValue: DateTime.now().toString().split(' ')[0],
@@ -163,7 +193,21 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () {
-                            if (_formKey.currentState!.validate()) {
+                            if (_formKey.currentState!.validate() &&
+                                _validateLabTests()) {
+                              final labTests =
+                                  _labTests.map((entry) {
+                                    return LabTestModel(
+                                      testName: entry.testNameController.text,
+                                      referenceRange:
+                                          entry.referenceRangeController.text,
+                                      unit:
+                                          entry.unitController.text.isNotEmpty
+                                              ? entry.unitController.text
+                                              : null,
+                                    );
+                                  }).toList();
+
                               final requisition = RequisitionModel(
                                 id: const Uuid().v4(),
                                 patient: PatientModel(
@@ -171,8 +215,12 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
                                   age: int.parse(_ageController.text),
                                   address: _addressController.text,
                                 ),
-                                laboratoryTest: _testController.text,
+                                labTests: labTests,
                                 orderDate: DateTime.now(),
+                                laboratoryTest:
+                                    labTests.isNotEmpty
+                                        ? labTests.first.testName
+                                        : null,
                               );
 
                               context.read<RequisitionBloc>().add(
@@ -189,7 +237,6 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
                           ),
                         ),
                       ),
-                      SizedBox(height: context.spacingMedium),
                     ],
                   ),
                 ),
@@ -199,6 +246,109 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
         ),
       ),
     );
+  }
+
+  List<Widget> _buildLabTestForms() {
+    return List.generate(_labTests.length, (index) {
+      final entry = _labTests[index];
+      return Card(
+        margin: EdgeInsets.only(bottom: context.spacingMedium),
+        child: Padding(
+          padding: EdgeInsets.all(context.spacingMedium),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Test ${index + 1}', style: context.headingSmall),
+                  if (_labTests.length > 1)
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => _removeLabTest(index),
+                      tooltip: 'Remove test',
+                    ),
+                ],
+              ),
+              SizedBox(height: context.spacingMedium),
+              TextFormField(
+                controller: entry.testNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Test Name',
+                  hintText: 'e.g. Total leucocyte count',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter test name';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: context.spacingMedium),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: entry.referenceRangeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Reference Range',
+                        hintText: 'e.g. 4000 – 11000',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter reference range';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  SizedBox(width: context.spacingMedium),
+                  Expanded(
+                    child: TextFormField(
+                      controller: entry.unitController,
+                      decoration: const InputDecoration(
+                        labelText: 'Unit',
+                        hintText: 'e.g. /microliter',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  bool _validateLabTests() {
+    if (_labTests.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please add at least one lab test')),
+      );
+      return false;
+    }
+
+    for (var test in _labTests) {
+      if (test.testNameController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter all test names')),
+        );
+        return false;
+      }
+      if (test.referenceRangeController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter all reference ranges')),
+        );
+        return false;
+      }
+    }
+
+    return true;
   }
 
   void _showRequisitionSuccessDialog(BuildContext context, String id) {
@@ -250,7 +400,6 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  // Navigate back to role selection page
                   context.go('/');
                 },
                 child: const Text('Close'),
@@ -266,5 +415,23 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
             ],
           ),
     );
+  }
+}
+
+class LabTestEntry {
+  final TextEditingController testNameController;
+  final TextEditingController referenceRangeController;
+  final TextEditingController unitController;
+
+  LabTestEntry({
+    required this.testNameController,
+    required this.referenceRangeController,
+    required this.unitController,
+  });
+
+  void dispose() {
+    testNameController.dispose();
+    referenceRangeController.dispose();
+    unitController.dispose();
   }
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hospital_lab_app/core/extensions/theme_extension.dart';
 
-/// Extension on Widget to add common styling and spacing
 extension WidgetExtension on Widget {
   // Add padding
   Widget withPadding(EdgeInsetsGeometry padding) => Padding(
@@ -24,10 +23,10 @@ extension WidgetExtension on Widget {
     child: this,
   );
   
-  // Center the widget
+  // Center widget
   Widget centered() => Center(child: this);
   
-  // Add a border
+  // Add border
   Widget withBorder(BuildContext context, {Color? color, double width = 1.0}) => Container(
     decoration: BoxDecoration(
       border: Border.all(
@@ -39,7 +38,7 @@ extension WidgetExtension on Widget {
     child: this,
   );
   
-  // Add a shadow
+  // Add shadow
   Widget withShadow({
     Color color = Colors.black26,
     double blurRadius = 10.0,

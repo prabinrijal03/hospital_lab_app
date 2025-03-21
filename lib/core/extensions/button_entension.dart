@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hospital_lab_app/core/extensions/theme_extension.dart';
 
 extension ButtonExtension on BuildContext {
-  // Primary button style
+  // Primary button
   ButtonStyle get primaryButtonStyle => ElevatedButton.styleFrom(
     backgroundColor: primaryColor,
     foregroundColor: Colors.white,
@@ -13,7 +13,7 @@ extension ButtonExtension on BuildContext {
     elevation: 2,
   );
   
-  // Secondary button style
+  // Secondary button 
   ButtonStyle get secondaryButtonStyle => ElevatedButton.styleFrom(
     backgroundColor: secondaryColor,
     foregroundColor: Colors.white,
@@ -24,7 +24,7 @@ extension ButtonExtension on BuildContext {
     elevation: 2,
   );
   
-  // Outlined button style
+  // Outlined button 
   ButtonStyle get outlinedButtonStyle => OutlinedButton.styleFrom(
     foregroundColor: primaryColor,
     padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
@@ -34,7 +34,7 @@ extension ButtonExtension on BuildContext {
     side: BorderSide(color: primaryColor),
   );
   
-  // Success button style
+  // Success button 
   ButtonStyle get successButtonStyle => ElevatedButton.styleFrom(
     backgroundColor: successColor,
     foregroundColor: Colors.white,
@@ -45,7 +45,7 @@ extension ButtonExtension on BuildContext {
     elevation: 2,
   );
   
-  // Warning button style
+  // Warning button 
   ButtonStyle get warningButtonStyle => ElevatedButton.styleFrom(
     backgroundColor: warningColor,
     foregroundColor: Colors.white,
@@ -56,7 +56,7 @@ extension ButtonExtension on BuildContext {
     elevation: 2,
   );
   
-  // Error button style
+  // Error button
   ButtonStyle get errorButtonStyle => ElevatedButton.styleFrom(
     backgroundColor: errorColor,
     foregroundColor: Colors.white,
@@ -67,7 +67,7 @@ extension ButtonExtension on BuildContext {
     elevation: 2,
   );
   
-  // Icon button style
+  // Icon button
   ButtonStyle get iconButtonStyle => IconButton.styleFrom(
     foregroundColor: primaryColor,
     shape: const CircleBorder(),

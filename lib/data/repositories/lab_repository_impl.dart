@@ -14,13 +14,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 class LabRepositoryImpl implements LabRepository {
   final SharedPreferences sharedPreferences;
   
-  // Keys for SharedPreferences
   static const String _requisitionsKey = 'requisitions';
   static const String _labReportsKey = 'lab_reports';
   
   LabRepositoryImpl({required this.sharedPreferences});
   
-  // Method to get all requisitions for the history page
+  // get all requisitions
   List<Requisition> getRequisitions() {
     final requisitionsJson = sharedPreferences.getString(_requisitionsKey);
     if (requisitionsJson == null) return [];
@@ -29,29 +28,32 @@ class LabRepositoryImpl implements LabRepository {
     return decodedList.map((item) => RequisitionModel.fromJson(item)).toList();
   }
   
-  // Method to get a specific requisition
+  // get a specific requisition
   Requisition? getRequisition(String id) {
     final requisitions = getRequisitions();
-    return requisitions.firstWhere(
-      (req) => req.id == id,
-      orElse: () => throw Exception('Requisition not found'),
-    );
+    try {
+      return requisitions.firstWhere(
+        (req) => req.id == id,
+        orElse: () => throw Exception('Requisition not found'),
+      );
+    } catch (e) {
+      return null;
+    }
   }
   
-  // Method to check if a lab report exists
+  // check if lab report exists
   bool hasLabReport(String id) {
     try {
       final report = _getLabReportFromStorage(id);
       if (report == null) return false;
       
-      // Check if any test has a non-pending result
       return report.testResults.any((test) => test.result != 'Pending');
     } catch (e) {
       return false;
     }
   }
   
-  // Method to get all lab reports
+  // get all lab reports
   List<LabReport> getLabReports() {
     final labReportsJson = sharedPreferences.getString(_labReportsKey);
     if (labReportsJson == null) return [];
@@ -62,7 +64,7 @@ class LabRepositoryImpl implements LabRepository {
         .toList();
   }
   
-  // Private method to get a lab report from storage
+  // get lab report from storage
   LabReportModel? _getLabReportFromStorage(String id) {
     final labReportsJson = sharedPreferences.getString(_labReportsKey);
     if (labReportsJson == null) return null;
@@ -73,14 +75,14 @@ class LabRepositoryImpl implements LabRepository {
     return LabReportModel.fromJson(decodedMap[id]);
   }
   
-  // Private method to save requisitions to storage
+  // save requisitions to storage
   Future<void> _saveRequisitionsToStorage(List<RequisitionModel> requisitions) async {
     final List<Map<String, dynamic>> jsonList = 
         requisitions.map((req) => req.toJson()).toList();
     await sharedPreferences.setString(_requisitionsKey, json.encode(jsonList));
   }
   
-  // Private method to save a lab report to storage
+  // save lab report to storage
   Future<void> _saveLabReportToStorage(LabReportModel report) async {
     final labReportsJson = sharedPreferences.getString(_labReportsKey);
     Map<String, dynamic> labReports = {};
@@ -96,13 +98,10 @@ class LabRepositoryImpl implements LabRepository {
   @override
   Future<Either<Failure, String>> submitRequisition(Requisition requisition) async {
     try {
-      // Get existing requisitions
       final requisitions = getRequisitions().toList();
       
-      // Add new requisition
       requisitions.add(requisition as RequisitionModel);
       
-      // Save to SharedPreferences
       await _saveRequisitionsToStorage(
         requisitions.cast<RequisitionModel>()
       );
@@ -116,7 +115,6 @@ class LabRepositoryImpl implements LabRepository {
   @override
   Future<Either<Failure, String>> submitLabReport(LabReport labReport) async {
     try {
-      // Save to SharedPreferences
       await _saveLabReportToStorage(labReport as LabReportModel);
       
       return Right(labReport.id);
@@ -128,36 +126,50 @@ class LabRepositoryImpl implements LabRepository {
   @override
   Future<Either<Failure, LabReport>> getLabReport(String id) async {
     try {
-      // Try to get from SharedPreferences
       final labReport = _getLabReportFromStorage(id);
       
-      // If not found, create a placeholder based on requisition
       if (labReport == null) {
         try {
           final requisition = getRequisition(id);
+          if (requisition == null) {
+            return const Left(CacheFailure(message: 'Requisition not found'));
+          }
           
-          // Create an empty lab report based on the requisition
-          final newLabReport = LabReportModel(
-            id: id,
-            patient: requisition?.patient as PatientModel,
-            labResultDate: DateTime.now(),
-            laboratoryTest: requisition?.laboratoryTest,
-            testResults: [
+          final testResults = <TestResultModel>[];
+          
+          if (requisition.labTests.isNotEmpty) {
+            testResults.addAll(
+              requisition.labTests.map((test) => TestResultModel(
+                testName: test.testName,
+                result: 'Pending',
+                referenceRange: test.referenceRange,
+                unit: test.unit,
+              )),
+            );
+          } else if (requisition.laboratoryTest != null) {
+            testResults.add(
               const TestResultModel(
                 testName: 'Total leucocyte count',
                 result: 'Pending',
                 referenceRange: '4000 – 11000',
                 unit: '/microliter',
               ),
-            ],
+            );
+          }
+          
+          final newLabReport = LabReportModel(
+            id: id,
+            patient: requisition.patient as PatientModel,
+            labResultDate: DateTime.now(),
+            laboratoryTest: requisition.laboratoryTest,
+            testResults: testResults,
           );
           
-          // Store the placeholder
           await _saveLabReportToStorage(newLabReport);
           
           return Right(newLabReport);
         } catch (e) {
-          return const Left(CacheFailure(message: 'Requisition not found'));
+          return Left(CacheFailure(message: 'Failed to create lab report: ${e.toString()}'));
         }
       }
       
