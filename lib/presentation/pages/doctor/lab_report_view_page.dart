@@ -107,8 +107,8 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Wrap(
+                      spacing: 8,
                       children: [
                         const Text(
                           'Patient Information',
@@ -161,7 +161,7 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
             Card(
               elevation: 2,
               child: Padding(
-                padding: EdgeInsets.all(context.spacingMedium),
+                padding: EdgeInsets.all(context.spacingXSmall),
                 child: Column(
                   children: [
                     Table(
@@ -169,12 +169,21 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                         color: Colors.grey.shade300,
                         width: 1,
                       ),
-                      columnWidths: const {
-                        0: FlexColumnWidth(2),
-                        1: FlexColumnWidth(2),
-                        2: FlexColumnWidth(2),
-                        3: FlexColumnWidth(1),
-                      },
+
+                      columnWidths:
+                          MediaQuery.of(context).size.width < 600
+                              ? {
+                                0: FlexColumnWidth(2),
+                                1: IntrinsicColumnWidth(),
+                                2: IntrinsicColumnWidth(),
+                                3: IntrinsicColumnWidth(),
+                              }
+                              : {
+                                0: FlexColumnWidth(2),
+                                1: FlexColumnWidth(2),
+                                2: FlexColumnWidth(2),
+                                3: FlexColumnWidth(2),
+                              },
                       children: [
                         const TableRow(
                           decoration: BoxDecoration(color: Color(0xFF1A73E8)),
@@ -202,7 +211,7 @@ class _LabReportViewPageState extends State<LabReportViewPage> {
                             Padding(
                               padding: EdgeInsets.all(8.0),
                               child: Text(
-                                'Reference Range',
+                                'Range',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,

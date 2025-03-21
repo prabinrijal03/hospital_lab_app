@@ -5,13 +5,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize SharedPreferences
   final prefs = await SharedPreferences.getInstance();
-  
+
   // Initialize dependency injection
   await di.init(prefs);
-  
+
   runApp(const MyApp());
 }
 
@@ -52,15 +52,28 @@ class MyApp extends StatelessWidget {
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           filled: true,
           fillColor: Colors.grey.shade50,
         ),
+        textTheme: Typography.material2018().black.copyWith(
+          bodyLarge: const TextStyle(fontSize: 16),
+          bodyMedium: const TextStyle(fontSize: 14),
+          bodySmall: const TextStyle(fontSize: 12),
+          labelLarge: const TextStyle(fontSize: 14),
+        ),
       ),
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(
+              MediaQuery.of(context).size.width < 600 ? 0.9 : 1.0,
+            ),
+          ),
+          child: child!,
+        );
+      },
       routerConfig: AppRouter.router,
     );
   }
 }
-

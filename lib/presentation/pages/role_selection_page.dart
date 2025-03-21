@@ -133,34 +133,57 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
               ),
               child: Text('Dashboard', style: context.headingMedium),
             ),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'Total Reports',
-                    _totalRequisitions.toString(),
-                    Icons.description,
-                    context.infoColor,
-                  ),
+            MediaQuery.of(context).size.width < 600
+                ? Column(
+                  children: [
+                    _buildStatCard(
+                      'Total Requisitions',
+                      _totalRequisitions.toString(),
+                      Icons.description,
+                      context.infoColor,
+                    ),
+                    _buildStatCard(
+                      'Completed Reports',
+                      _completedReports.toString(),
+                      Icons.check_circle,
+                      context.successColor,
+                    ),
+                    _buildStatCard(
+                      'Pending Reports',
+                      _pendingReports.toString(),
+                      Icons.hourglass_empty,
+                      context.warningColor,
+                    ),
+                  ],
+                )
+                : Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard(
+                        'Total Requisitions',
+                        _totalRequisitions.toString(),
+                        Icons.description,
+                        context.infoColor,
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildStatCard(
+                        'Completed Reports',
+                        _completedReports.toString(),
+                        Icons.check_circle,
+                        context.successColor,
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildStatCard(
+                        'Pending Reports',
+                        _pendingReports.toString(),
+                        Icons.hourglass_empty,
+                        context.warningColor,
+                      ),
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: _buildStatCard(
-                    'Completed Reports',
-                    _completedReports.toString(),
-                    Icons.check_circle,
-                    context.successColor,
-                  ),
-                ),
-                Expanded(
-                  child: _buildStatCard(
-                    'Pending Reports',
-                    _pendingReports.toString(),
-                    Icons.hourglass_empty,
-                    context.warningColor,
-                  ),
-                ),
-              ],
-            ),
           ],
         );
   }
@@ -203,28 +226,47 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
           ),
           child: Text('Select your role', style: context.headingMedium),
         ),
-        Row(
-          children: [
-            Expanded(
-              child: _buildRoleCard(
-                'Doctor',
-                'Create requisitions and view lab reports',
-                Icons.medical_services,
-                context.infoColor,
-                () => context.go('/doctor'),
-              ),
+        MediaQuery.of(context).size.width < 600
+            ? Column(
+              children: [
+                _buildRoleCard(
+                  'Doctor',
+                  'Create requisitions and view lab reports',
+                  Icons.medical_services,
+                  context.infoColor,
+                  () => context.go('/doctor'),
+                ),
+                _buildRoleCard(
+                  'Lab Technician',
+                  'Process requisitions and submit test results',
+                  Icons.science,
+                  context.successColor,
+                  () => context.go('/lab'),
+                ),
+              ],
+            )
+            : Row(
+              children: [
+                Expanded(
+                  child: _buildRoleCard(
+                    'Doctor',
+                    'Create requisitions and view lab reports',
+                    Icons.medical_services,
+                    context.infoColor,
+                    () => context.go('/doctor'),
+                  ),
+                ),
+                Expanded(
+                  child: _buildRoleCard(
+                    'Lab Technician',
+                    'Process requisitions and submit test results',
+                    Icons.science,
+                    context.successColor,
+                    () => context.go('/lab'),
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: _buildRoleCard(
-                'Lab Technician',
-                'Process requisitions and submit test results',
-                Icons.science,
-                context.successColor,
-                () => context.go('/lab'),
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
@@ -238,35 +280,45 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
   ) {
     return Card(
       margin: EdgeInsets.all(context.spacingSmall),
-      child: Padding(
-        padding: EdgeInsets.all(context.spacingLarge),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 48),
-            SizedBox(height: context.spacingMedium),
-            Text(title, style: context.headingMedium),
-            SizedBox(height: context.spacingSmall),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: context.bodyMedium.copyWith(color: Colors.grey[600]),
-            ),
-            SizedBox(height: context.spacingMedium),
-            ElevatedButton(
-              onPressed: () {
-                if (title == 'Doctor') {
-                  _showDoctorOptionsDialog(context);
-                } else {
-                  onTap();
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: color,
-                foregroundColor: Colors.white,
+      child: InkWell(
+        onTap: () {
+          if (title == 'Doctor') {
+            _showDoctorOptionsDialog(context);
+          } else {
+            onTap();
+          }
+        },
+        borderRadius: context.borderRadiusLarge,
+        child: Padding(
+          padding: EdgeInsets.all(context.spacingLarge),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 48),
+              SizedBox(height: context.spacingMedium),
+              Text(title, style: context.headingMedium),
+              SizedBox(height: context.spacingSmall),
+              Text(
+                description,
+                textAlign: TextAlign.center,
+                style: context.bodyMedium.copyWith(color: Colors.grey[600]),
               ),
-              child: Text('Continue as $title'),
-            ),
-          ],
+              SizedBox(height: context.spacingMedium),
+              ElevatedButton(
+                onPressed: () {
+                  if (title == 'Doctor') {
+                    _showDoctorOptionsDialog(context);
+                  } else {
+                    onTap();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: color,
+                  foregroundColor: Colors.white,
+                ),
+                child: Text('Continue as $title'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -354,8 +406,8 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
                 SizedBox(height: context.spacingMedium),
                 _buildDoctorOptionCard(
                   context,
-                  'Lab Reports',
-                  'View your previous reports',
+                  'Requisition History',
+                  'View your previous requisitions',
                   Icons.history,
                   context.infoColor,
                   () => context.go('/doctor/history'),
