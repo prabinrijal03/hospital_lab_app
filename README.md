@@ -107,3 +107,5 @@ The app follows the Clean Architecture pattern with BLoC for state management:
 
 1. Clone the repository:
    git clone https://github.com/prabinrijal03/hospital_lab_app.git
+2. Flutter pub get
+3. Flutter run
