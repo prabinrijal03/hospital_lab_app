@@ -47,25 +47,28 @@ The application is designed with a clean, intuitive interface and follows best p
 
 ### Role Selection Screen
 
-![Role Selection] ![Alt Text](assets/images/role_selection.png)
+Role Selection ![Alt Text](assets/images/role_selection.png)
 
 ### Doctor's Requisition Form
 
-![Doctor Requisition] ![Alt Text](assets/images/doctor_requisition.png)
-![Doctor Requisition 1] ![Alt Text](assets/images/doctor_requisition1.png)
+Doctor Requisition ![Alt Text](assets/images/doctor_requisition.png)
+
+### Doctor's Requisition Form With Multiple Information
+
+Doctor Requisition ![Alt Text](assets/images/doctor_requisition1.png)
 
 ### Requisition History
 
-![Requisition History] ![Alt Text](assets/images/requisition_history.png)
+Requisition History ![Alt Text](assets/images/requisition_history.png)
 
 ### Lab Report View (Doctor)
 
-![Pending Report View] ![Alt Text](assets/images/pending_report.png)
-![Report Result View] ![Alt Text](assets/images/report_result.png)
+Pending Report View ![Alt Text](assets/images/pending_report.png)
+Submitted Report View ![Alt Text](assets/images/report_result.png)
 
 ### Lab Report Form (Technician)
 
-![Lab Report Form] ![Alt Text](assets/images/technician_view.png)
+Lab Report Form ![Alt Text](assets/images/technician_view.png)
 
 ## Architecture
 
